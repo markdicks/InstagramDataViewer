@@ -29,8 +29,8 @@ Instagram Data Viewer is a **Blazor WebAssembly** application that helps analyze
 ### Installation  
 1. Clone the repository:  
    ```sh
-   git clone https://github.com/markdicks/BlazerInstagramManager.git
-   cd BlazerInstagramManager
+   git clone https://github.com/markdicks/InstagramDataViewer.git
+   cd InstagramDataViewer
    ```
 2. Open in **Visual Studio** and build the project.  
 3. Configure the **SQL connection** in `appsettings.json`.  
