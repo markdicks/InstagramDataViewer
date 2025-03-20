@@ -15,11 +15,11 @@
 
 @code {
     private string statusMessage = "";
+
     private async Task HandleFileSelected(ChangeEventArgs e)
     {
-        if (e.Value is not string fileName || string.IsNullOrEmpty(fileName)) return;
+        if (e.Value is not IBrowserFile file) return;
 
-        var file = (IBrowserFile)e.Value;
         string uploadPath = Path.Combine("wwwroot/uploads", file.Name);
 
         await using FileStream fs = new(uploadPath, FileMode.Create);
@@ -72,21 +72,21 @@
     private void SaveProfilePhoto(string fileName, string imagePath)
     {
         string dbPath = Path.Combine("wwwroot/database", "InstagramData.db");
-        if (!File.Exists(dbPath))
-        {
-            SQLiteConnection.CreateFile(dbPath);
-        }
 
-        using var conn = new SQLiteConnection($"Data Source={dbPath};Version=3;");
+        // Ensure database folder exists
+        Directory.CreateDirectory(Path.GetDirectoryName(dbPath));
+
+        using var conn = new SqliteConnection($"Data Source={dbPath};");
         conn.Open();
-        string tableName = Path.GetFileNameWithoutExtension(fileName).Split('-').Take(4).Aggregate((a, b) => a + "-" + b);
+
+        string tableName = string.Join("-", fileName.Split('-').Take(4));
 
         string createTableQuery = $"CREATE TABLE IF NOT EXISTS {tableName} (Key TEXT PRIMARY KEY, Value TEXT);";
-        using var cmd = new SQLiteCommand(createTableQuery, conn);
+        using var cmd = new SqliteCommand(createTableQuery, conn);
         cmd.ExecuteNonQuery();
 
         string insertQuery = $"INSERT OR REPLACE INTO {tableName} (Key, Value) VALUES ('ProfilePhoto', @Value);";
-        using var insertCmd = new SQLiteCommand(insertQuery, conn);
+        using var insertCmd = new SqliteCommand(insertQuery, conn);
         insertCmd.Parameters.AddWithValue("@Value", imagePath);
         insertCmd.ExecuteNonQuery();
     }
