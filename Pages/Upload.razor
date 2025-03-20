@@ -1,0 +1,93 @@
+﻿@page "/upload"
+@using Microsoft.Data.Sqlite
+@inject NavigationManager Navigation
+
+<PageTitle>Upload File</PageTitle>
+
+<div class="container">
+    <div class="hero-section">
+        <h1>Upload File</h1>
+        <p>Select a compressed file containing Instagram data.</p>
+        <input type="file" @onchange="HandleFileSelected" />
+        <p>@statusMessage</p>
+    </div>
+</div>
+
+@code {
+    private string statusMessage = "";
+    private async Task HandleFileSelected(ChangeEventArgs e)
+    {
+        if (e.Value is not string fileName || string.IsNullOrEmpty(fileName)) return;
+
+        var file = (IBrowserFile)e.Value;
+        string uploadPath = Path.Combine("wwwroot/uploads", file.Name);
+
+        await using FileStream fs = new(uploadPath, FileMode.Create);
+        await file.OpenReadStream().CopyToAsync(fs);
+
+        string extractedFolder = Path.Combine("wwwroot/extracted", Path.GetFileNameWithoutExtension(file.Name));
+        Directory.CreateDirectory(extractedFolder);
+
+        System.IO.Compression.ZipFile.ExtractToDirectory(uploadPath, extractedFolder, true);
+
+        string mediaPath = FindMediaFolder(extractedFolder);
+        if (string.IsNullOrEmpty(mediaPath))
+        {
+            statusMessage = "Media folder not found.";
+            return;
+        }
+
+        string profilePhotoPath = FindProfilePhoto(mediaPath);
+        if (string.IsNullOrEmpty(profilePhotoPath))
+        {
+            statusMessage = "Profile photo not found.";
+            return;
+        }
+
+        SaveProfilePhoto(file.Name, profilePhotoPath);
+        statusMessage = "Profile photo successfully saved!";
+    }
+
+    private string FindMediaFolder(string rootPath)
+    {
+        foreach (var dir in Directory.GetDirectories(rootPath, "media", SearchOption.AllDirectories))
+        {
+            return dir;
+        }
+        return string.Empty;
+    }
+
+    private string FindProfilePhoto(string mediaPath)
+    {
+        var profileFolders = Directory.GetDirectories(mediaPath, "profile", SearchOption.AllDirectories);
+        if (!profileFolders.Any()) return string.Empty;
+
+        string latestFolder = profileFolders.OrderByDescending(d => d).FirstOrDefault();
+        if (string.IsNullOrEmpty(latestFolder)) return string.Empty;
+
+        var images = Directory.GetFiles(latestFolder, "*.jpg");
+        return images.FirstOrDefault() ?? "";
+    }
+
+    private void SaveProfilePhoto(string fileName, string imagePath)
+    {
+        string dbPath = Path.Combine("wwwroot/database", "InstagramData.db");
+        if (!File.Exists(dbPath))
+        {
+            SQLiteConnection.CreateFile(dbPath);
+        }
+
+        using var conn = new SQLiteConnection($"Data Source={dbPath};Version=3;");
+        conn.Open();
+        string tableName = Path.GetFileNameWithoutExtension(fileName).Split('-').Take(4).Aggregate((a, b) => a + "-" + b);
+
+        string createTableQuery = $"CREATE TABLE IF NOT EXISTS {tableName} (Key TEXT PRIMARY KEY, Value TEXT);";
+        using var cmd = new SQLiteCommand(createTableQuery, conn);
+        cmd.ExecuteNonQuery();
+
+        string insertQuery = $"INSERT OR REPLACE INTO {tableName} (Key, Value) VALUES ('ProfilePhoto', @Value);";
+        using var insertCmd = new SQLiteCommand(insertQuery, conn);
+        insertCmd.Parameters.AddWithValue("@Value", imagePath);
+        insertCmd.ExecuteNonQuery();
+    }
+}

@@ -1,0 +1,68 @@
+﻿@page "/dashboard"
+
+<PageTitle>Dashboard</PageTitle>
+
+<h1>Dashboard</h1>
+
+<p>This page demonstrates hardcoded data for testing purposes.</p>
+
+@if (dashboardData == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="dashboard">
+        <div class="card">
+            <h3>Total Visitors</h3>
+            <p>@dashboardData.TotalVisitors</p>
+        </div>
+        <div class="card">
+            <h3>Top Post</h3>
+            <p>@dashboardData.TopPostTitle</p>
+        </div>
+        <div class="card">
+            <h3>Most Engaged Followers</h3>
+            <ul>
+                @foreach (var follower in dashboardData.MostEngagedFollowers)
+                {
+                    <li>@follower</li>
+                }
+            </ul>
+        </div>
+        <div class="card">
+            <h3>Popular Hashtags</h3>
+            <ul>
+                @foreach (var hashtag in dashboardData.PopularHashtags)
+                {
+                    <li>@hashtag</li>
+                }
+            </ul>
+        </div>
+    </div>
+}
+
+@code {
+    private DashboardData dashboardData;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Hardcoded data for testing
+        await Task.Delay(500); // Simulating a delay like an API call
+        dashboardData = new DashboardData
+            {
+                TotalVisitors = 1234,
+                TopPostTitle = "Blazor Is Amazing!",
+                MostEngagedFollowers = new List<string> { "User1", "User2", "User3" },
+                PopularHashtags = new List<string> { "#Blazor", "#CSharp", "#WebAssembly" }
+            };
+    }
+
+    public class DashboardData
+    {
+        public int TotalVisitors { get; set; }
+        public string TopPostTitle { get; set; }
+        public List<string> MostEngagedFollowers { get; set; }
+        public List<string> PopularHashtags { get; set; }
+    }
+}
