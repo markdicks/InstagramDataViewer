@@ -1,0 +1,35 @@
+﻿@page "/login"
+@inject ApiService ApiService
+@inject NavigationManager Navigation
+
+<h3>Login</h3>
+
+<p>For now, just enter your user ID to simulate login:</p>
+
+<input type="number" @bind="UserId" />
+<button @onclick="LoginUser">Login</button>
+
+@if (Error != null)
+{
+    <p style="color:red">@Error</p>
+}
+
+@code {
+    private int UserId;
+    private string? Error;
+
+    private async Task LoginUser()
+    {
+        var user = await ApiService.GetUser(UserId);
+        if (user != null)
+        {
+            AppState.IsLoggedIn = true;
+            AppState.CurrentUser = user;
+            Navigation.NavigateTo("/dashboard");
+        }
+        else
+        {
+            Error = "User not found.";
+        }
+    }
+}

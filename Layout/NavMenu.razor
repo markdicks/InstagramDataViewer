@@ -1,4 +1,24 @@
-﻿<NavLink href="/">Home</NavLink>
+﻿@inject NavigationManager Navigation
+
+<NavLink href="/">Home</NavLink>
 <NavLink href="/dashboard">Dashboard</NavLink>
 <NavLink href="/followers">Followers</NavLink>
 <NavLink href="/upload">Upload</NavLink>
+
+@if (AppState.IsLoggedIn)
+{
+    <button @onclick="Logout">Logout</button>
+}
+else
+{
+    <NavLink href="/login">Login</NavLink>
+}
+
+@code {
+    private void Logout()
+    {
+        AppState.IsLoggedIn = false;
+        AppState.CurrentUser = null;
+        Navigation.NavigateTo("/");
+    }
+}

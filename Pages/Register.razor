@@ -1,0 +1,40 @@
+﻿@page "/register"
+@inject ApiService ApiService
+@inject NavigationManager Navigation
+
+<h3>Register</h3>
+
+<input placeholder="Username" @bind="NewUser.UserName" />
+<input placeholder="Email" @bind="NewUser.Email" />
+<input placeholder="Password" type="password" @bind="NewUser.Password" />
+<input placeholder="First Name" @bind="NewUser.UserProfile.FirstName" />
+<input placeholder="Last Name" @bind="NewUser.UserProfile.LastName" />
+<input placeholder="Address" @bind="NewUser.UserProfile.Address" />
+<br />
+<button @onclick="RegisterUser">Create Account</button>
+
+@if (Error != null)
+{
+    <p style="color:red">@Error</p>
+}
+
+@code {
+    private CreateUserDto NewUser = new CreateUserDto
+        {
+            UserProfile = new UserProfileDto()
+        };
+    private string? Error;
+
+    private async Task RegisterUser()
+    {
+        var success = await ApiService.RegisterUser(NewUser);
+        if (success)
+        {
+            Navigation.NavigateTo("/login");
+        }
+        else
+        {
+            Error = "Registration failed.";
+        }
+    }
+}
